@@ -1,0 +1,235 @@
+body {
+    background-image: url('PNG/table.png');
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: 100% 80%;
+}
+div.bids {
+    position: absolute;
+    top: 85%;
+    width: 100%;
+    text-align: center;
+}
+div.cards {
+    position: absolute;
+    top: 90%;
+    width: 100%;
+    text-align: center;
+}
+button.bid{
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: #6495ED;
+    padding: 5px 10px;
+}
+
+button.signUp{
+    background: transparent;
+    border: none;
+    color: #6495ED;
+}
+
+button.bid:disabled,
+button.bid[disabled]{
+    color: #666666;
+}
+div.atu {
+    position: fixed;
+    top: 35%;
+    width: 100%;
+    left: 50%;
+}
+
+div.p0 {
+    position: fixed;
+    top: 46%;
+    width: 100%;
+    left: 50%;
+}
+
+div.p1 {
+    position: fixed;
+    top: 40.5%;
+    width: 100%;
+    left: 40%;
+}
+
+div.p2 {
+    position: fixed;
+    top: 29.5%;
+    width: 100%;
+    left: 40%;
+}
+
+div.p3 {
+    position: fixed;
+    top: 24%;
+    width: 100%;
+    left: 50%;
+}
+
+div.p4 {
+    position: fixed;
+    top: 29.5%;
+    width: 100%;
+    left: 60%;
+}
+
+div.p5 {
+    position: fixed;
+    top: 40.5%;
+    width: 100%;
+    left: 60%;
+}
+
+div.player0{
+    position: fixed;
+    border: 3px solid;
+    width: 70px;
+    height: 60px;
+    top: 65%;
+    left: 50%;
+}
+
+div.player1{
+    position: fixed;
+    border: 3px solid;
+    width: 70px;
+    height: 60px;
+    top: 42.5%;
+    left: 25%;
+}
+
+div.player2{
+    position: fixed;
+    border: 3px solid;
+    width: 70px;
+    height: 60px;
+    top: 30%;
+    left: 25%;
+}
+
+div.player3{
+    position: fixed;
+    border: 3px solid;
+    width: 70px;
+    height: 60px;
+    top: 8%;
+    left: 50%;
+}
+
+div.player4{
+    position: fixed;
+    border: 3px solid;
+    width: 70px;
+    height: 60px;
+    top: 30%;
+    left: 74%; 
+}
+
+div.player5{
+    position: fixed;
+    border: 3px solid;
+    width: 70px;
+    height: 60px;
+    top: 42.5%;
+    left: 74%; 
+}
+
+div.login-container{
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    padding-top: 60px;
+}
+
+div.login{
+    background-color: #fefefe;
+    margin: 5% auto 15% auto;
+    border: 1px solid #888;
+    width: 500px;
+    padding: 16px;
+}
+
+.animate {
+    -webkit-animation: animatezoom 0.6s;
+    animation: animatezoom 0.6s
+}
+
+@-webkit-keyframes animatezoom {
+    from {-webkit-transform: scale(0)}
+    to {-webkit-transform: scale(1)}
+}
+
+@keyframes animatezoom {
+      from {transform: scale(0)}
+      to {transform: scale(1)}
+}
+
+input[type=text], input[type=password] {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+input .noSpace{
+}
+
+div.top {
+    background-color: #333;
+    overflow: hidden;
+}
+
+div.top a {
+    float: left;
+    color: #f2f2f2;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: 17px;
+}
+
+button.topLogin {
+    position:absolute;
+    right:20px;
+    top:25%;
+    width:auto;
+}
+
+button.login {
+    background-color: #4CAF50;
+    position: absolute;
+    right: 20px;
+}
+
+button.chatButton {
+    position:absolute;
+    top:0;
+    left:232px;
+}
+
+.chat {
+    position:absolute;
+    top:0;
+    resize:none;
+}
+
+.chatBoard {
+    position:absolute;
+    top:20px;
+    overflow-y:scroll;
+    height:100px;
+    width:266px;
+    resize:none;
+}
