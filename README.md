@@ -4,3 +4,4 @@ src\main\java\com\example\demo\configuration se afla configuratia websocketului 
 src\main\resources\static se afla implementarea interfetei clientului(pagina web)
 
 serverul e configurat pe http://localhost:8080/
+serverul e configurat sa se connecteze la mongodb local
