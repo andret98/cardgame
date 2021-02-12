@@ -8,6 +8,7 @@
 </head>
 <body>
     <script type="text/javascript" src="script.js"></script>
+    <script type="text/javascript" src="functions.js"></script>
     <div class="top" style="position:relative">
         <a id="username">Guest</a>
         <button class="topLogin" id="loginButton" onclick="document.getElementById('login').style.display='block'">Login</button>
@@ -58,8 +59,9 @@
         <button id="findGame" onclick="findGame()">Find</button>
         <button id="cancel" style="color:blue; background-color: inherit; border:none" onclick="cancel()" hidden>Cancel</button>
         <div id="findTimer" hidden><label id="minutes">00</label>:<label id="seconds">00</label></div>
-
-
+        <div>
+            <button onclick="document.getElementById('lobby').hidden = false; document.getElementById('findGameDiv').hidden = true; showLobbies();">Lobby</button>
+        </div>
     </div>
     <div id="cardGame" style="position:relative; height:860px" hidden>
     <div class="bids">
@@ -110,37 +112,43 @@
         <img id="played5" src="PNG/card_back.png" width="60" hidden>
     </div>
 
-    <div class = "player0" id = "player0" hidden>
+    <div class = "player0 playerpanel" id = "player0" hidden>
+        <div id="user0"></div>
         <div>bid:<text id="bid0"></text></div>
         <div>won:<text id="won0">0</text></div>
         <div>score:<text id="score0">0</text></div>
     </div>
 
-    <div class = "player1" id = "player1" hidden>
+    <div class = "player1 playerpanel" id = "player1" hidden>
+        <div id="user1"></div>
         <div>bid:<text id="bid1"></text></div>
         <div>won:<text id="won1">0</text></div>
         <div>score:<text id="score1">0</text></div>
     </div>
 
-    <div class = "player2" id = "player2" hidden>
+    <div class = "player2 playerpanel" id = "player2" hidden>
+        <div id="user2"></div>
         <div>bid:<text id="bid2"></text></div>
         <div>won:<text id="won2">0</text></div>
         <div>score:<text id="score2">0</text></div>
     </div>
 
-    <div class = "player3" id = "player3" hidden>
+    <div class = "player3 playerpanel" id = "player3" hidden>
+        <div id="user3"></div>
         <div>bid:<text id="bid3"></text></div>
         <div>won:<text id="won3">0</text></div>
         <div>score:<text id="score3">0</text></div>
     </div>
 
-    <div class = "player4" id = "player4" hidden>
+    <div class = "player4 playerpanel" id = "player4" hidden>
+        <div id="user4"></div>
         <div>bid:<text id="bid4"></text></div>
         <div>won:<text id="won4">0</text></div>
         <div>score:<text id="score4">0</text></div>
     </div>
 
-    <div class = "player5" id = "player5" hidden>
+    <div class = "player5 playerpanel" id = "player5" hidden>
+        <div id="user5"></div>
         <div>bid:<text id="bid5"></text></div>
         <div>won:<text id="won5">0</text></div>
         <div>score:<text id="score5">0</text></div>
@@ -152,6 +160,51 @@
         <textarea class="chat" id="chat" placeholder="Remember, be nice!" cols="30" rows="1" maxlength="100" disabled></textarea>
         <button class="chatButton" id="chatButton" onclick="chat()" disabled>chat</button>
     </div>
+    <div>
+        <button onclick="document.getElementById('score').style.display='block'" style="position:absolute;bottom:0;right:0">Score</button>
+    </div>
+    <div id="score" class="score-container">
+        <div class="score">
+            <table class="login-container" id="score-table" style="width: 100%;">
+            </table>
+        </div>
+    </div>
+    <div style="position:absolute;top:0; right:0">
+        <div id="timerBot"></div>
+    </div>
+    </div>
+    <div id="lobby" class="lobby" hidden>
+        <button id="createLobby" onclick="document.getElementById('lobby').hidden = true;document.getElementById('lobby-joined').hidden = false;">Create</button>
+        <button id="refreshLobby" onclick="showLobbies()">Refresh</button>
+        <button style="position:absolute; right:0" onclick="document.getElementById('lobby').hidden = true;document.getElementById('findGameDiv').hidden = false;">Back</button>
+        <button id="joinLobby" style="position:fixed; right:50%; top:75%; width:100px; height:30px;" onclick="joinLobby()">Join</button>
+        <table class="lobby" id="lobby-table" width = 100%>
+            <tr class="lobby">
+                <td class="lobby">room</td>
+                <td class="lobby">type</td>
+                <td class="lobby">players</td>
+            </tr>
+        </table>
+    </div>
+    <div class="lobby" id="lobby-joined" hidden>
+        <div id="lobby-settings" style="width:100%; border:1px solid black;">
+        Settings:
+            <select id="nrPlayersLobby">
+                <option value=3 >3</option>
+                <option value=4 >4</option>
+                <option value=5 >5</option>
+                <option value=6 >6</option>
+            </select>
+            <select id="gameTypeLobby">
+                <option value=1 >1..8..1</option>
+                <option value=8 >8..1..8</option>
+            </select>
+            <button id="lobby-create" onclick="createLobby()">Create</button>
+            <button id="lobby-start" onclick="startLobby()" disabled>Start</button>
+        </div>
+        <button onclick="leaveLobby()" style="position:absolute; bottom:0; left:50%; text-align:center">Leave</button>
+        <div id="lobby-players">
+        </div>
     </div>
 </body>
 </html>

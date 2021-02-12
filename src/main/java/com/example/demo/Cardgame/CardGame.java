@@ -9,11 +9,13 @@ import org.springframework.web.socket.WebSocketSession;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.Math.abs;
 
 public class CardGame {
     private Timer timer;
+    private String[] usernames;
     private List<WebSocketSession> sessions;
     private List<Integer> cardSet;
     private List<Integer> rounds;
@@ -31,17 +33,11 @@ public class CardGame {
     private int nrPlayers;
     private int currentPlayer;
     private Random random;
-    private long delay = 1000000L;
-
+    private long delay = 10000L;
+    private String table = "";
+    private int type;
     public CardGame(int nrPlayers, int cardGameType, List<WebSocketSession> sessions) {
-        TimerTask timerTask = new TimerTask() {
-            @Override
-            public void run() {
-                botMove();
-            }
-        };
-        this.timer = new Timer();
-
+        this.type = cardGameType;
         this.cardSet = CardSet.getCardSet(nrPlayers);
         this.sessions = sessions;
         this.nrPlayers = nrPlayers;
@@ -49,6 +45,7 @@ public class CardGame {
         this.currentRound = 0;
         this.state = CardGameState.CREATEGAME;
         this.cardsColors = new int[nrPlayers][4];
+        this.usernames = new String[nrPlayers];
         this.score = new int[nrPlayers];
         this.bids = new int[nrPlayers];
         this.won = new int[nrPlayers];
@@ -72,8 +69,28 @@ public class CardGame {
             this.atu = this.cardSet.get(random.nextInt(this.cardSet.size()));
         else
             this.atu = 0;
-        this.state = CardGameState.BID;
-        timer.scheduleAtFixedRate(timerTask, delay, delay);
+        state = CardGameState.BID;
+    }
+
+    public boolean addUsername(WebSocketSession session, String username) {
+        boolean ok = true;
+        for(int i = 0; i < sessions.size(); i++) {
+            if(sessions.get(i).getId().equals(session.getId())) {
+                usernames[i] = username;
+            }
+            if(usernames[i] == null) {
+                ok = false;
+            }
+        }
+        return ok;
+    }
+
+    public String[] getUsernames() {
+        return usernames;
+    }
+
+    public int getCurrentPlayer() {
+        return currentPlayer;
     }
 
     public List<List<Integer>> getPlayersCards() {
@@ -83,6 +100,10 @@ public class CardGame {
         return score;
     }
 
+    public Timer getTimer() {
+        return timer;
+    }
+
     public List<WebSocketSession> getSessions() {
         return sessions;
     }
@@ -90,6 +111,18 @@ public class CardGame {
         return sessions.contains(session);
     }
 
+    public void startTimer(){
+        timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                botMove();
+            }
+        }, delay, delay);
+    }
+    public void cancelTimer(){
+        timer.cancel();
+    }
     private int getTotalBid() {
         int total = 0;
         for(int i : bids)
@@ -115,6 +148,7 @@ public class CardGame {
                 score[i] = score[i] - abs(bids[i] - won[i]);
             else
                 score[i] += 5 + won[i];
+            table += i +";" + won[i] + ";" + i +";" + score[i] + ";";
             bids[i] = 0;
             won[i] = 0;
         }
@@ -141,21 +175,14 @@ public class CardGame {
                     return false;
                 }
             }
-            timer.cancel();
             bids[(currentRound + currentPlayer) % nrPlayers ] = bid;
+            table += playerTurn + ";" + bid + ";";
             currentPlayer++;
             if(currentPlayer == nrPlayers) {
                 state = CardGameState.PLAYCARD;
                 currentPlayer = 0;
                 winner = currentRound % nrPlayers;
             }
-            timer = new Timer();
-            timer.scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    botMove();
-                }
-            }, delay, delay);
             return true;
         } else {
             System.out.println("Not your turn");
@@ -168,25 +195,16 @@ public class CardGame {
         if(state == CardGameState.PLAYCARD && sessions.get(playerTurn).equals(player)) {
             if(currentPlayer == 0) {
                 if(playersCards.get(playerTurn).contains(card)) {
-                    timer.cancel();
                     color = card / 100;
                     cardsColors[playerTurn][color - 1]--;
                     played[playerTurn] = card;
                     playersCards.get(playerTurn).remove(Integer.valueOf(card));
-                    timer = new Timer();
-                    timer.scheduleAtFixedRate(new TimerTask() {
-                        @Override
-                        public void run() {
-                            botMove();
-                        }
-                    }, delay, delay);
                 } else {
                     System.out.println("Doesn't have that card");
                     return false;
                 }
             } else {
                 if(playersCards.get(playerTurn).contains(card)) {
-                    timer.cancel();
                     if(card / 100 != color && cardsColors[playerTurn][color - 1] != 0) {
                         System.out.println("Didn't play at color ");
                         return false;
@@ -197,14 +215,6 @@ public class CardGame {
                     played[playerTurn] = card;
                     cardsColors[playerTurn][card / 100 - 1]--;
                     playersCards.get(playerTurn).remove(Integer.valueOf(card));
-                    timer = new Timer();
-                    timer.scheduleAtFixedRate(new TimerTask() {
-                        @Override
-                        public void run() {
-                            System.out.println("Bot move");
-                            botMove();
-                        }
-                    }, delay, delay);
                 } else {
                     System.out.println("Doesn't have that card");
                     return false;
@@ -297,6 +307,12 @@ public class CardGame {
         try {
             obj.put("code", Codes.RECONNECT);
             obj.put("playerId", player);
+            obj.put("type", type);
+            obj.put("table", table);
+            for(String s : usernames)
+                array.put(s);
+            obj.put("users", array);
+            array = new JSONArray();
             for(int s : bids)
                 array.put(s);
             obj.put("bids", array);
@@ -350,6 +366,7 @@ public class CardGame {
                 }
             }
             bids[playerTurn ] = bid;
+            table += playerTurn + ";" + bid + ";";
             for(WebSocketSession s : getSessions()) {
                 //s.sendMessage(new TextMessage("player: " + currentPlayer + " bid: " + data));
                 JSONObject obj = new JSONObject();
@@ -427,7 +444,22 @@ public class CardGame {
             }
             currentPlayer++;
             checkWinner();
+            if(currentPlayer == 0 && getState() != CardGameState.BID) {
+                cancelTimer();
+                try {
+                    TimeUnit.SECONDS.sleep(2);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                startTimer();
+            }
             if(getState() == CardGameState.BID) {
+                cancelTimer();
+                try {
+                    TimeUnit.SECONDS.sleep(2);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 for(int i = 0; i < sessions.size() ; i++) {
                     obj = new JSONObject();
                     JSONArray array = new JSONArray();
@@ -448,7 +480,7 @@ public class CardGame {
                         e.printStackTrace();
                     }
                 }
-
+                startTimer();
                 for(int j : getScore())
                     System.out.print(j + " ");
                 System.out.println();

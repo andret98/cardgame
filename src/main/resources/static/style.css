@@ -83,56 +83,44 @@ div.p5 {
     left: 60%;
 }
 
+div.playerpanel{
+    border: 3px solid;
+    width: 80px;
+    height: 70px;
+}
+
 div.player0{
     position: fixed;
-    border: 3px solid;
-    width: 70px;
-    height: 60px;
     top: 65%;
     left: 50%;
 }
 
 div.player1{
     position: fixed;
-    border: 3px solid;
-    width: 70px;
-    height: 60px;
     top: 42.5%;
     left: 25%;
 }
 
 div.player2{
     position: fixed;
-    border: 3px solid;
-    width: 70px;
-    height: 60px;
     top: 30%;
     left: 25%;
 }
 
 div.player3{
     position: fixed;
-    border: 3px solid;
-    width: 70px;
-    height: 60px;
     top: 8%;
     left: 50%;
 }
 
 div.player4{
     position: fixed;
-    border: 3px solid;
-    width: 70px;
-    height: 60px;
     top: 30%;
     left: 74%; 
 }
 
 div.player5{
     position: fixed;
-    border: 3px solid;
-    width: 70px;
-    height: 60px;
     top: 42.5%;
     left: 74%; 
 }
@@ -232,4 +220,69 @@ button.chatButton {
     height:100px;
     width:266px;
     resize:none;
+}
+
+
+table {
+    border: 2px solid black;
+    border-collapse: collapse;
+}
+
+td.table{
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+td.left{
+    border-left: 2px solid black;
+    border-collapse: collapse;
+}
+
+
+td.bottom{
+    border-bottom: 2px solid black;
+    border-collapse: collapse;
+}
+
+td{
+    border-bottom: 2px solid black;
+    text-align: center;
+}
+
+div.score-container{
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    padding-top: 60px;
+}
+
+div.score{
+    background-color: #fefefe;
+    margin: 5% auto 15% auto;
+    width: 900px;
+    overflow: scroll;
+}
+
+
+div.lobby{
+    position: relative  ;
+    top:0;
+    left:0;
+    background-color: #fefefe;
+    margin: 5% auto 15% auto;
+    width: 900px;
+    height: 500px;
+    overflow: scroll;
+}
+
+.lobby{
+    border: 1px solid black;
+    border-collapse: collapse;
 }

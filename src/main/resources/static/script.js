@@ -1,34 +1,40 @@
-var nrPlayers;
-var type;
-var moves = 0;
 var code;
-var playerId;
 var player;
-var currentRound = 0;
-var currentPlayer = 0;
-var room;
-var totalBids = 0;
-var turns = 0;
-let cards;
-var atu;
-let bids = [0,0,0,0,0,0];
-let won = [0,0,0,0,0,0];
-let played = [0,0,0,0,0,0];
-let score = [0,0,0,0,0,0];
-let colorArray = [0,0,0,0];
-var winner = 0;
-var color = 0;
 var timer;
 var totalSeconds = 0;
 var ws;
-var username = "guest" + Math.random();
+var leader = 0;
+var username;
+var countDownDate;
+var delayBot = 10;
+var selected = 0;
 let aux;
+class CardGame{
+    constructor(nrPlayers, type) {
+        this.nrPlayers = nrPlayers;
+        this.type = type;
+        this.moves = 0;
+        this.currentRound = 0;
+        this.currentPlayer = 0;
+        this.turns = 0;
+        this.bids = [0,0,0,0,0,0];
+        this.won = [0,0,0,0,0,0];
+        this.played = [0,0,0,0,0,0];
+        this.score = [0,0,0,0,0,0];
+        this.colorArray = [0,0,0,0];
+        this.users = ["","","","","",""];
+        this.winner = 0;
+        this.color = 0;
+    }
+}
+let cardGame;
 
 function findGame() {
     nrPlayers = parseInt($('#nrPlayers').val());
     type = parseInt($('#gameType').val());
+    cardGame = new CardGame(nrPlayers, type);
     waitForSocketConnection(ws, function(){
-        var myObj = {code: 101, data: (nrPlayers * 10 + type), room: null};
+        var myObj = {code: 101, data: (cardGame.nrPlayers * 10 + cardGame.type)};
         var myJSON = JSON.stringify(myObj);
         ws.send(myJSON);
     });
@@ -36,21 +42,6 @@ function findGame() {
     $('#cancel').prop("hidden", false);
     $('#findTimer').prop("hidden",false);
     timer = setInterval(setTime, 1000);
-}
-
-function setTime() {
-  totalSeconds++;
-  $('#seconds').html(pad(totalSeconds % 60));
-  $('#minutes').html(pad(parseInt(totalSeconds / 60)));
-}
-
-function pad(val) {
-  var valString = val + "";
-  if (valString.length < 2) {
-    return "0" + valString;
-  } else {
-    return valString;
-  }
 }
 
 function signUp() {
@@ -79,7 +70,7 @@ function login() {
 }
 
 function cancel() {
-    var myObj = {code: 106, data: (nrPlayers * 10 + type)};
+    var myObj = {code: 106, data: (cardGame.nrPlayers * 10 + cardGame.type)};
     var myJSON = JSON.stringify(myObj);
     ws.send(myJSON);
     $('#cancel').prop("hidden", true);
@@ -92,137 +83,103 @@ function cancel() {
 }
 
 function bid(i) {
-    var myObj = {code: 102, data: i, room: room};
+    var myObj = {code: 102, data: i, room: cardGame.room};
     var myJSON = JSON.stringify(myObj);
     ws.send(myJSON);
 }
 
 function play(i) {
-    var myObj = {code: 103, data: cards[i], room: room};
+    var myObj = {code: 103, data: cardGame.cards[i], room: cardGame.room};
     var myJSON = JSON.stringify(myObj);
     ws.send(myJSON);
 }
 
 function chat() {
     var message = document.getElementById('chat').value.trim();
-    var myObj = {code: 200, room: room, msg: message};
+    var myObj = {code: 200, room: cardGame.room, msg: message};
     var myJSON = JSON.stringify(myObj);
     document.getElementById('chat').value = "";
     ws.send(myJSON);
 }
 
-function gameRoom(n) {
-    for(var i = 0; i < n; i++) {
-        $('#player' + i).prop("hidden", false);
-        $('#played' + i).prop("hidden", false);
-    }
+function createLobby(){
+    nrPlayers = parseInt($('#nrPlayersLobby').val());
+    type = parseInt($('#gameTypeLobby').val());
+    $('#lobby-start').prop("disabled", false);
+    leader = 1;
+    cardGame = new CardGame(nrPlayers, type);
+    var myObj = {code: 400, data: (cardGame.nrPlayers * 10 + cardGame.type), msg : username};
+    var myJSON = JSON.stringify(myObj);
+    ws.send(myJSON);
 }
 
-function backgroundOff(currentPlayer) {
-    if(currentPlayer - playerId < 0) {
-        $('#player' + (nrPlayers - playerId + currentPlayer)).css("background-color","inherit");
-    } else {
-        $('#player' + (currentPlayer - playerId)).css("background-color","inherit");
-    }
+function showLobbies(){
+    var myObj = {code: 401};
+    var myJSON = JSON.stringify(myObj);
+    ws.send(myJSON);
 }
 
-function backgroundOn(currentPlayer) {
-    if(currentPlayer - playerId < 0) {
-        $('#player' + (nrPlayers - playerId + currentPlayer)).css("background-color","rgba(240,255,255,0.4)");
-    } else {
-        $('#player' + (currentPlayer - playerId)).css("background-color","rgba(240,255,255,0.4)");
-    }
+function joinLobby(){
+    var table = document.getElementById("lobby-table");
+    var row = table.rows[selected];
+    cardGame = new CardGame(parseInt(row.cells[2].innerHTML), parseInt(row.cells[1].innerHTML));
+    cardGame.room = row.cells[0].innerHTML;
+    var myObj = {code: 402, data: parseInt(cardGame.room), msg: username};
+    var myJSON = JSON.stringify(myObj);
+    ws.send(myJSON);
 }
 
-function reconnect(obj) {
+function lobbyList(obj){
+    var table = document.getElementById("lobby-table");
+    while(table.rows.length > 1) {
+        table.deleteRow(1);
+    }
     console.log(obj);
-    nrPlayers = obj.score.length;
-    gameRoom(nrPlayers);
-    $('#findGameDiv').prop("hidden",true);
-    $('#cardGame').prop("hidden",false);
-    $('#chat').prop("disabled", false);
-    $('#chatButton').prop("disabled", false);
-    playerId = obj.playerId;
-    for(var i = 0; i< obj.score.length; i++) {
-        totalBids += obj.bids[i];
-        if(i - playerId < 0) {
-            $('#bid' + (nrPlayers - playerId + i)).html(obj.bids[i]);
-            bids[(nrPlayers - playerId + i)] = obj.bids[i];
-            if(obj.played[i] == 0)
-                $('#played' + (nrPlayers - playerId + i)).prop("src", "PNG/card_back.png");
-            else
-                $('#played' + (nrPlayers - playerId + i)).prop("src", "PNG/" + obj.played[i] +".png");
-            played[(nrPlayers - playerId + i)] = obj.played[i];
-            $('#score' + (nrPlayers - playerId + i)).html(obj.score[i]);
-            score[(nrPlayers - playerId + i)] = obj.score[i];
-            $('#won' + (nrPlayers - playerId + i)).html(obj.won[i]);
-            score[(nrPlayers - playerId + i)] = obj.won[i];
-        } else {
-            $('#bid' + (i - playerId)).html(obj.bids[i]);
-            bids[(i - playerId)] = obj.bids[i];
-            if(obj.played[i] == 0)
-                $('#played' + (nrPlayers - playerId + i)).prop("src", "PNG/card_back.png");
-            else
-                $('#played' + (i - playerId)).prop("src", "PNG/" + obj.played[i] +".png");
-            played[(i - playerId)] = obj.played[i];
-            $('#score' + (i - playerId)).html(obj.score[i]);
-            score[(i - playerId)] = obj.score[i];
-            $('#won' + (i - playerId)).html(obj.won[i]);
-            score[(i - playerId)] = obj.won[i];
+    for(k = 0; k<parseInt(obj.length / 3); k++) {
+        var row = table.insertRow();
+        for(var j = 0; j<3; j++){
+            var cel = row.insertCell(j);
+            cel.innerHTML = obj[j + k * 3];
+            cel.className = "lobby";
+            cel.onclick = function(){
+                rIndex = this.parentElement.rowIndex;
+                table.rows[selected].style.backgroundColor = "inherit";
+                selected = rIndex;
+                table.rows[selected].style.backgroundColor = "rgb(245, 245, 220)";
+                cIndex = this.cellIndex;
+            };
         }
     }
+}
 
-    currentRound = obj.currentRound;
-    cards = obj.cards;
-    turns = cards.length;
-    color = obj.color;
-    moves = obj.moves;
-    winner = obj.winner;
-    for(var i = 0; i< cards.length; i++) {
-        colorArray[parseInt(cards[i] / 100) - 1]++;
-        $('#card' + i).prop("hidden", false);
-        $('#card' + i).prop("src", "PNG/" + cards[i] + ".png");
+function leaveLobby(){
+    $('#lobby-joined').prop("hidden", true);
+    $('#lobby').prop("hidden", false);
+    if(leader == 0)
+        showLobbies();
+    var myObj = {code: 404, data:cardGame.room};
+    var myJSON = JSON.stringify(myObj);
+    ws.send(myJSON);
+}
+
+function startLobby(){
+    var myObj = {code: 403};
+    var myJSON = JSON.stringify(myObj);
+    ws.send(myJSON);
+}
+
+function joined(obj) {
+    $('#lobby-joined').prop("hidden", false);
+    var result = "";
+    if(leader == 0) {
+        $('#lobby-settings').prop("hidden", true);
+        result += "Players: " + cardGame.nrPlayers + "<br>Type: " + cardGame.type + "<br>";
     }
-    room = obj.room;
-    atu = obj.atu;
-    if(atu != 0) {
-        $('#atu').prop("src", "PNG/" + atu + ".png");
-    } else {
-        $('#atu').prop("src", "PNG/card_back.png");
-    }
-    currentPlayer = obj.currentPlayer;
-    backgroundOn(currentPlayer);
-    if(currentPlayer == playerId && obj.state == 102) {
-        for(var i = 0; i<=cards.length; i++) {
-            if(moves == nrPlayers - 1 && i == cards.length - totalBids) {
-                continue;
-            }
-            $('#bidButton' + i).prop("disabled", false);
-        }
-    }
-    if(currentPlayer == playerId && obj.state == 103) {
-        if(moves == 0) {
-            for(var i = 0; i<cards.length; i++) {
-                $('#card' + i).prop("style", "opacity: 1;");
-            }
-        } else {
-            if(colorArray[color - 1]!= 0) {
-                for(var i = 0; i <= cards.length; i++) {
-                    if(parseInt(cards[i] /100) == color)
-                        $('#card' + i).prop("style", "opacity: 1;");
-                }
-            }else if(atu!=0 && colorArray[parseInt(atu/100) - 1] != 0) {
-                for(var i = 0; i <= cards.length; i++) {
-                    if(parseInt(cards[i] /100) == parseInt(atu/100))
-                        $('#card' + i).prop("style", "opacity: 1;");
-                }
-            }else {
-                for(var i = 0; i <= cards.length; i++) {
-                    $('#card' + i).prop("style", "opacity: 1;");
-                }
-            }
-        }
-    }
+    $('#lobby').prop("hidden", true);
+    result += "Lobby leader: " + obj.data[0] + "<br>"
+    for(var i=1; i<obj.data.length; i++)
+        result += obj.data[i] + "<br>"
+    $('#lobby-players').html(result);
 }
 
 function waitForSocketConnection(socket, callback){
@@ -261,212 +218,57 @@ $(function(){
         if (event.target == document.getElementById('signIn')) {
             document.getElementById('signUp').style.display = "none";
         }
+        if (event.target == document.getElementById('score')) {
+            document.getElementById('score').style.display = "none";
+        }
     }
     ws = new WebSocket('ws://localhost:8080/game');
     ws.onmessage = function(data) {
         var obj = JSON.parse(data.data);
         code = obj.code;
-        if(code == 101) {
-            var now = new Date();
-            var time = now.getTime();
-            time += 360 * 1000;
-            now.setTime(time);
+        if(code == 100) {
+            username = "Guest" + obj.data;
+            $("#username").html(username);
+        } else if(code == 101) {
+            //var now = new Date();
+            //var time = now.getTime();
+            //time += 360 * 1000;
+            //now.setTime(time);
             //document.cookie = 'username' + obj.player + '=' + username +
             //                  '; expires=' + now.toUTCString() +
             //                  '; path=/';
-            gameRoom(nrPlayers);
-            $('#findGameDiv').prop("hidden",true);
-            $('#cardGame').prop("hidden",false);
-            $('#chat').prop("disabled", false);
-            $('#chatButton').prop("disabled", false);
-            playerId = obj.player;
-            room = obj.room;
-            cards = obj.cards;
-            turns = cards.length;
-            atu = obj.atu;
-            for(var i = 0 ; i < cards.length ; i++) {
-                colorArray[parseInt(cards[i] / 100) - 1]++;
-                $('#card' + i).prop("hidden", false);
-                $('#card' + i).prop("src", "PNG/" + cards[i] + ".png");
-            }
-            backgroundOn(currentPlayer);
-            if(atu != 0)
-                $('#atu').prop("src", "PNG/" + atu + ".png");
-            if(playerId == currentPlayer) {
-                for(var i = 0; i <= cards.length; i++) {
-                    $('#bidButton' + i).prop("disabled", false);
-                }
-            }
+            $('#lobby-joined').prop("hidden", true);
+            gameFound(obj, cardGame, delayBot);
+            var myObj = {code: 201, msg: username, room : cardGame.room};
+            var myJSON = JSON.stringify(myObj);
+            ws.send(myJSON);
         } else if(code == 102){
-            moves++;
-            totalBids += obj.bid;
-            player = obj.player;
-            if(playerId == player) {
-                for(var i = 0; i <= 8; i++) {
-                    $('#bidButton' + i).prop("disabled", true);
-                }
-            }
-            backgroundOff(player);
-            currentPlayer = (player + 1) % nrPlayers;
-            backgroundOn(currentPlayer);
-            //bids[player] = obj.bid;
-            //$('#bid' + player).html(obj.bid);
-            if(player - playerId < 0) {
-                $('#bid' + (nrPlayers - playerId + player)).html(obj.bid);
-                bids[(nrPlayers - playerId + player)] = obj.bid;
-            } else {
-                $('#bid' + (player - playerId)).html(obj.bid);
-                bids[(player - playerId)] = obj.bid;
-            }
-            if(playerId == currentPlayer && moves != nrPlayers)
-                for(var i = 0; i <= cards.length; i++) {
-                    if(moves == nrPlayers - 1 && cards.length - totalBids == i)
-                        continue;
-                    $('#bidButton' + i).prop("disabled", false);
-                }
-            if(moves == nrPlayers) {
-                moves = 0;
-                if(playerId == currentPlayer) {
-                    for(var i = 0; i <= cards.length; i++) {
-                        $('#card' + i).prop("style", "opacity: 1;");
-                    }
-                }
-            }
+            bidding(obj, cardGame, delayBot);
         } else if(code == 103) {
-
-            player = obj.player;
-            if(playerId == player)
-                for(var i = 0; i <= cards.length; i++) {
-                    if(cards[i] == obj.card) {
-                        colorArray[parseInt(cards[i]/100) - 1]--;
-                        $('#card' + i).prop("hidden", true);
-                    }
-                    $('#card' + i).prop("style", "opacity: 0.5;");
-                }
-            backgroundOff(player);
-            currentPlayer = (player + 1) % nrPlayers;
-            if(player - playerId < 0) {
-                $('#played' + (nrPlayers - playerId + player)).prop("src", "PNG/" + obj.card +".png");
-                played[(nrPlayers - playerId + player)] = obj.card;
-            } else {
-                $('#played' + (player - playerId)).prop("src", "PNG/" + obj.card +".png");
-                played[(player - playerId)] = obj.card;
-            }
-            if(winner == 0) {
-                winner = obj.card;
-                color = parseInt(obj.card / 100);
-            } else {
-                if(atu!= 0 && parseInt(winner/100) == parseInt(atu/100) && parseInt(obj.card/100) == parseInt(atu/100) && obj.card > winner) {
-                    winner = obj.card;
-                } else if(atu!= 0 && parseInt(winner/100) != parseInt(atu/100) && parseInt(obj.card/100) == parseInt(atu/100)) {
-                    winner = obj.card;
-                } else if(parseInt(winner/100) == color && parseInt(obj.card/100) == color && obj.card > winner) {
-                    winner = obj.card;
-                } else if(parseInt(winner/100) != parseInt(atu/100)  && parseInt(winner/100) != color && parseInt(obj.card/100) == color ) {
-                    winner = obj.card;
-                }
-            }
-            moves++;
-            if(moves != nrPlayers)
-                backgroundOn(currentPlayer);
-            if(playerId == currentPlayer && moves != nrPlayers)
-                if(colorArray[color - 1]!= 0) {
-                    for(var i = 0; i <= cards.length; i++) {
-                        if(parseInt(cards[i] /100) == color)
-                            $('#card' + i).prop("style", "opacity: 1;");
-                    }
-                }else if(atu!=0 && colorArray[parseInt(atu/100) - 1] != 0) {
-                    for(var i = 0; i <= cards.length; i++) {
-                        if(parseInt(cards[i] /100) == parseInt(atu/100))
-                            $('#card' + i).prop("style", "opacity: 1;");
-                    }
-                }else {
-                    for(var i = 0; i <= cards.length; i++) {
-                        $('#card' + i).prop("style", "opacity: 1;");
-                    }
-                }
-            if(moves === nrPlayers) {
-                setTimeout(() => {turns--;
-                for(var i = 0; i<nrPlayers; i++)
-                    if(played[i] == winner) {
-                        won[i]++;
-                        currentPlayer = i;
-                        if(turns!=0)
-                            backgroundOn(currentPlayer);
-                        if(currentPlayer == 0 && turns != 0)
-                            for(var j = 0; j < cards.length; j++) {
-                                $('#card' + j).prop("style", "opacity: 1;");
-                                console.log(cards[j]);
-                            }
-                        $('#won' + i).html(won[i]);
-                        break;
-                    }
-                winner = 0;
-                color = 0;
-                moves = 0;
-                for(var i = 0; i<nrPlayers; i++) {
-                    $('#played' + i).prop("src", "PNG/card_back.png");
-                }}, 0);
-            }
+            playing(obj, cardGame, delayBot);
         } else if(code == 104) {
-            setTimeout(() => {
-            cards = obj.cards;
-            turns = cards.length;
-            atu = obj.atu;
-            totalBids = 0;
-            for(var i = 0 ; i < cards.length ; i++) {
-                colorArray[parseInt(cards[i] / 100) - 1]++;
-                $('#card' + i).prop("hidden", false);
-                $('#card' + i).prop("src", "PNG/" + cards[i] + ".png");
-            }
-            if(atu != null && atu != 0) {
-                $('#atu').prop("src", "PNG/" + atu + ".png");
-            } else {
-                $('#atu').prop("src", "PNG/card_back.png");
-                atu = 0;
-            }
-            for(var i = 0; i<nrPlayers; i++) {
-                if(bids[i] == won[i])
-                    score[i] += 5 + bids[i];
-                else
-                    score[i] = score[i] - Math.abs(bids[i] - won[i]);
-                bids[i] = 0;
-                won[i] = 0;
-                $('#played' + i).prop("src", "PNG/card_back.png");
-                $('#bid' + i).html("");
-                $('#won' + i).html(0);
-                $('#score' + i).html(score[i]);
-            }
-            console.log(score);
-            currentRound++;
-            backgroundOn(currentRound % nrPlayers);
-            if(playerId == currentRound % nrPlayers)
-                for(var i = 0; i <= cards.length; i++) {
-                    $('#bidButton' + i).prop("disabled", false);
-                }},0)
+            endRound(obj, cardGame);
         } else if(code == 105) {
-            setTimeout(() => {
-            for(var i = 0; i<nrPlayers; i++) {
-                if(bids[i] == won[i])
-                    score[i] += 5 + bids[i];
-                else
-                    score[i] = score[i] - Math.abs(bids[i] - won[i]);
-                bids[i] = 0;
-                won[i] = 0;
-                $('#played' + i).prop("src", "PNG/card_back.png");
-                $('#bid' + i).html("");
-                $('#won' + i).html(0);
-                $('#score' + i).html(score[i]);
-            }
-            alert("Game over");
-            console.log(score);},0)
+            endGame(obj, cardGame);
         } else if(code == 107) {
+            setTimerBot(delayBot);
             reconnect(obj);
         } else if(code == 200) {
             var textarea = document.getElementById('chatBoard');
             if(textarea.scrollHeight - textarea.scrollTop < 130)
                 textarea.scrollTop = textarea.scrollHeight;
-            textarea.value = textarea.value + "Player"+ obj.player +": " +obj.message + "\n";
+            textarea.value = textarea.value + obj.player +": " +obj.message + "\n";
+        } else if(code == 201) {
+            generateTable(cardGame.nrPlayers,cardGame.type, obj.users);
+            for(var i = 0; i< cardGame.nrPlayers; i++) {
+                if(i - cardGame.playerId < 0) {
+                    $('#user' + (cardGame.nrPlayers - cardGame.playerId + i)).html(obj.users[i]);
+                    cardGame.users[(cardGame.nrPlayers - cardGame.playerId + i)] = obj.users[i];
+                } else {
+                    $('#user' + (i - cardGame.playerId)).html(obj.users[i]);
+                    cardGame.users[(i - cardGame.playerId)] = obj.users[i];
+                }
+            }
         } else if(code == 300) {
             if(obj.data.length == 0) {
                 $('#signUser').val("");
@@ -490,8 +292,24 @@ $(function(){
             } else {
                 $('#loginError').html(obj.data);
             }
+        } else if(code == 400) {
+            $('#lobby-create').prop("disabled",true);
+            $('#lobby-players').html("Lobby leader: " + username + "<br>");
+            cardGame.room = obj.data;
+        } else if(code == 401) {
+            var s = obj.data.split(" ");
+            lobbyList(s);
+        } else if(code == 402) {
+            joined(obj);
+        } else if(code == 404) {
+            if(typeof obj.data != "undefined") {
+                joined(obj);
+            } else {
+                $('#lobby-joined').prop("hidden",true);
+                $('#lobby').prop("hidden",false);
+                showLobbies();
+            }
         }
-
     };
 
 });
